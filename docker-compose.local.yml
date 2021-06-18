@@ -1,0 +1,58 @@
+version: "3"
+services:
+  php:
+    build:
+      context: ./
+      dockerfile: docker/Dockerfile
+      args:
+        - SSH_PORT=20102
+    volumes:
+      - ${DOCKER_RUNTIME}/php_logs/:/var/log/php-fpm
+      - ./www:/var/www
+    environment:
+      - LISTEN=9000
+      - SESSION_SAVE_HANDLER=redis
+      - SESSION_SAVE_PATH=tcp://redis:6379
+      - DB_NAME=test
+      - DB_USER=testuser
+      - DB_PASSWORD=testpassword
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - MAX_CHILDREN=10
+      - START_SERVERS=4
+      - MAX_SPARE_SERVERS=4
+      - MAX_REQUESTS=500
+      - OPCACHE_ENABLE=1
+    ports:
+      - 20101:80
+      - 20102:20102
+    restart: always
+    logging:
+      options:
+        max-size: '50m'
+        max-file: '3'
+  redis:
+    image: redis:6.2.4-alpine
+    volumes:
+      - ${DOCKER_RUNTIME}/redis_data:/data
+    restart: always
+    logging:
+      options:
+        max-size: '50m'
+        max-file: '3'
+  postgres:
+    image: postgres:11.12
+    environment:
+      - POSTGRES_PASSWORD=secret
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=stage
+    volumes:
+      - ${DOCKER_RUNTIME}/pg_data:/var/lib/postgresql/data
+      - ./docker/pg-init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - 20103:5432
+    restart: always
+    logging:
+      options:
+        max-size: '50m'
+        max-file: '3'
