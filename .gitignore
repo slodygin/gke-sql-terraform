@@ -9,3 +9,5 @@ override.tf.json
 .terraform.lock.hcl
 key.json
 kubeconfig.yaml
+*.tfvars
+tfplan

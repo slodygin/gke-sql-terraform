@@ -1,3 +1,5 @@
-gcp_project_id = "helpful-lens-307104"
-gcp_region     = "us-central1"
+gcp_project_id = ""
+region     = "us-central1"
 gcp_zone = "us-central1-a"
+sql_pass = ""
+gke_master_pass = ""

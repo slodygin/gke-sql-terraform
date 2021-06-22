@@ -1,78 +1,96 @@
 variable "gcp_project_id" {
   description = "The project ID where we'll create the GKE cluster and related resources."
+ }
+
+# GKE variables
+
+variable "region" {
+  description = "Region of resources"
 }
 
-variable "gcp_region" {
-  description = "The region where we'll create your resources (e.g. us-central1)."
+variable "min_master_version" {
+  description = "Number of nodes in each GKE cluster zone"
 }
 
-variable "gcp_zone" {
-  description = "The zone where we'll create your resources (e.g. us-central1-b)."
+variable "node_version" {
+  description = "Number of nodes in each GKE cluster zone"
+}
+
+variable "gke_num_nodes" {
+  type        = map
+  description = "Number of nodes in each GKE cluster zone"
+}
+
+variable "vpc_name" {
+  description = "vpc name"
+}
+variable "subnet_name" {
+  description = "subnet name"
+}
+
+variable "gke_master_user" {
+  description = "Username to authenticate with the k8s master"
+}
+
+variable "gke_master_pass" {
+  description = "Username to authenticate with the k8s master"
+}
+
+variable "gke_node_machine_type" {
+  description = "Machine type of GKE nodes"
+}
+
+# k8s variables
+variable gke_label {
+  type        = map
+  description = "label"
 }
 
 data "google_client_config" "current" {}
 
-variable "gcp_network_name" {
-  default = "tf-gke"
-}
-
-provider "google" {
-  project = "${var.gcp_project_id}"
-  region  = "${var.gcp_region}"
-  zone    = "${var.gcp_zone}"
-}
-
-resource "google_compute_network" "default" {
-  name                    = "${var.gcp_network_name}"
-  auto_create_subnetworks = false
-}
-
-resource "google_compute_subnetwork" "default" {
-  name                     = "${var.gcp_network_name}"
-  ip_cidr_range            = "10.127.0.0/20"
-  network                  = "${google_compute_network.default.self_link}"
-  region                   = "${var.gcp_region}"
-  private_ip_google_access = true
-}
-
-data "google_container_engine_versions" "default" {
-  location = "${var.gcp_zone}"
-}
-
-# See all available options at https://www.terraform.io/docs/providers/google/r/container_cluster.html
 resource "google_container_cluster" "primary" {
-  name               = "gke"
-  location           = "${var.gcp_zone}"
-  initial_node_count = 3
-  min_master_version = "${data.google_container_engine_versions.default.latest_master_version}"
-  network            = "${google_compute_subnetwork.default.name}"
-  subnetwork         = "${google_compute_subnetwork.default.name}"
+  name = "gke-${terraform.workspace}-cluster"
+  location = "${var.region}-a"
+  project = "${var.gcp_project_id}"
 
-  ip_allocation_policy {}
+  node_locations = [
+    "${var.region}-b",
+    "${var.region}-c",
+  ]
 
-  master_auth {
-    client_certificate_config {
-      issue_client_certificate = true
+  //  region              = "${var.region}"
+  min_master_version = "${var.min_master_version}"
+  node_version       = "${var.node_version}"
+  enable_legacy_abac = false
+  initial_node_count = "${var.gke_num_nodes[terraform.workspace]}"
+  network            = "${var.vpc_name}"
+  subnetwork         = "${var.subnet_name}"
+
+  addons_config {
+    http_load_balancing {
+      disabled = false
     }
-  }
 
-  provisioner "local-exec" {
-    when    = "destroy"
-    command = "sleep 90"
+    horizontal_pod_autoscaling {
+      disabled = false
+    }
   }
 
   node_config {
-    preemptible  = false
-    machine_type = "n1-standard-2"
-
-    metadata = {
-      disable-legacy-endpoints = "true"
-    }
-
     oauth_scopes = [
+      "https://www.googleapis.com/auth/compute",
+      "https://www.googleapis.com/auth/devstorage.read_only",
       "https://www.googleapis.com/auth/logging.write",
       "https://www.googleapis.com/auth/monitoring",
     ]
+
+    labels = {
+      env = "${var.gke_label[terraform.workspace]}"
+    }
+
+    disk_size_gb = 10
+    machine_type = "${var.gke_node_machine_type}"
+    tags         = ["gke-node"]
   }
 }
 
@@ -142,11 +160,11 @@ output "gcp_project_id" {
 }
 
 output "gcp_network" {
-  value = "${google_compute_network.default.self_link}"
+  value = "${var.vpc_name}"
 }
 
 output "gcp_subnetwork_name" {
-  value = "${google_compute_subnetwork.default.name}"
+  value = "${var.subnet_name}"
 }
 
 output "gke_master_ip" {
