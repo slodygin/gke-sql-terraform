@@ -27,6 +27,14 @@ variable "vpc_name" {
 variable "subnet_name" {
   description = "subnet name"
 }
+variable "subnet_name2" {
+  description = "subnet name"
+}
+variable "subnet_name3" {
+  description = "subnet name"
+}
+
+
 
 variable "gke_master_user" {
   description = "Username to authenticate with the k8s master"
@@ -65,6 +73,13 @@ resource "google_container_cluster" "primary" {
   initial_node_count = "${var.gke_num_nodes[terraform.workspace]}"
   network            = "${var.vpc_name}"
   subnetwork         = "${var.subnet_name}"
+
+  default_max_pods_per_node=50
+
+  ip_allocation_policy {
+    cluster_secondary_range_name  = "${var.subnet_name2}"
+    services_secondary_range_name = "${var.subnet_name3}"
+  }
 
   addons_config {
     http_load_balancing {

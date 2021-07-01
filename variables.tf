@@ -26,7 +26,20 @@ variable "subnet_cidr" {
     prod = "10.10.0.0/24"
     dev  = "10.240.0.0/24"
   }
-
+  description = "Subnet range"
+}
+variable "subnet_cidr2" {
+  default = {
+    prod = "192.168.100.0/22"
+    dev  = "192.168.108.0/22"
+  }
+  description = "Subnet range"
+}
+variable "subnet_cidr3" {
+  default = {
+    prod = "192.168.104.0/22"
+    dev  = "192.168.112.0/22"
+  }
   description = "Subnet range"
 }
 

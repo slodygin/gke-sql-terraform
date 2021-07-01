@@ -23,6 +23,8 @@ resource "google_redis_instance" "redis" {
   location_id             = "us-central1-a"
   alternative_location_id = "us-central1-f"
 
+  authorized_network      = "${var.vpc_name}"
+
   redis_version           = "REDIS_5_0"
   display_name            = "Terraform Test Instance"
   project                 = "${var.gcp_project_id}"

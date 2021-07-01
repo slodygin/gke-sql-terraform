@@ -71,6 +71,11 @@ metadata:
     cloud.google.com/load-balancer-type: "External"
     kubernetes.io/ingress.class: "gce"
 spec:
+  defaultBackend:
+    service:
+      name: phptest1
+      port:
+        number: 80
   rules:
   - http:
       paths:
